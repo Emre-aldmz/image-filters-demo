@@ -168,7 +168,9 @@ class ConfigExecutor(Config):
     value: Union[GrayscaleExecutor, BlenderExecutor]
     type: Literal["executor"] = "executor"
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
-    restart: Literal[True] = True 
+    
+    restart: Literal[True] = True
+
     class Config:
         title = "Select Task"
         json_schema_extra = {"target": "value"}
