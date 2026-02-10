@@ -34,6 +34,7 @@ class GrayscaleTask(Component):
         return {}
 
     def run(self):
+        # self.req_data kullanıyoruz
         req_inputs = self.req_data.inputs
         if not req_inputs or not req_inputs.inputImage:
             return build_response(context=self)
