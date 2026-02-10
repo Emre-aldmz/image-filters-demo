@@ -7,7 +7,7 @@ class InputImage(Input):
     value: Union[List[Image], Image]
     type: str = "object"
     @validator("type", pre=True, always=True)
-    def set_type_based_on_value(cls, value, values):
+    def set_type(cls, value, values):
         return "list" if isinstance(values.get('value'), list) else "object"
     class Config: title = "Main Image"
 
@@ -16,7 +16,7 @@ class InputImage2(Input):
     value: Union[List[Image], Image]
     type: str = "object"
     @validator("type", pre=True, always=True)
-    def set_type_based_on_value(cls, value, values):
+    def set_type(cls, value, values):
         return "list" if isinstance(values.get('value'), list) else "object"
     class Config: title = "Second Image"
 
@@ -25,7 +25,7 @@ class OutputImage(Output):
     value: Union[List[Image], Image]
     type: str = "object"
     @validator("type", pre=True, always=True)
-    def set_type_based_on_value(cls, value, values):
+    def set_type(cls, value, values):
         return "list" if isinstance(values.get('value'), list) else "object"
     class Config: title = "Result Image"
 
@@ -68,7 +68,9 @@ class GrayscaleSelector(Config):
     value: Union[GrayOptionManual, GrayOptionAuto]
     type: Literal["object"] = "object"
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
-    class Config: title = "Grayscale Method"
+    class Config: 
+        title = "Grayscale Method"
+        json_schema_extra = {"target": "value"} 
 
 class GrayscaleConfigs(Configs):
     setting: GrayscaleSelector
@@ -82,8 +84,7 @@ class GrayscaleOutputs(Outputs):
 class GrayscaleRequest(Request):
     inputs: Optional[GrayscaleInputs]
     configs: GrayscaleConfigs
-    class Config:
-        json_schema_extra = {"target": "configs"}
+    class Config: json_schema_extra = {"target": "configs"}
 
 class GrayscaleResponse(Response):
     outputs: GrayscaleOutputs
@@ -93,7 +94,6 @@ class GrayscaleExecutor(Config):
     value: Union[GrayscaleRequest, GrayscaleResponse]
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
-    
     class Config:
         title = "Grayscale Filter"
         json_schema_extra = {"target": {"value": 0}}
@@ -131,7 +131,9 @@ class BlenderSelector(Config):
     value: Union[BlendOptionOpacity, BlendOptionText]
     type: Literal["object"] = "object"
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
-    class Config: title = "Blender Method"
+    class Config: 
+        title = "Blender Method"
+        json_schema_extra = {"target": "value"}
 
 class BlenderConfigs(Configs):
     setting: BlenderSelector
@@ -147,8 +149,7 @@ class BlenderOutputs(Outputs):
 class BlenderRequest(Request):
     inputs: Optional[BlenderInputs]
     configs: BlenderConfigs
-    class Config:
-        json_schema_extra = {"target": "configs"}
+    class Config: json_schema_extra = {"target": "configs"}
 
 class BlenderResponse(Response):
     outputs: BlenderOutputs
@@ -158,7 +159,6 @@ class BlenderExecutor(Config):
     value: Union[BlenderRequest, BlenderResponse]
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
-    
     class Config:
         title = "Image Blender"
         json_schema_extra = {"target": {"value": 1}}
@@ -168,15 +168,14 @@ class ConfigExecutor(Config):
     value: Union[GrayscaleExecutor, BlenderExecutor]
     type: Literal["executor"] = "executor"
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
+    restart: Literal[True] = True
     
     class Config:
         title = "Select Task"
-        json_schema_extra = {"target": "value"}
-
+        json_schema_extra = {"shortDescription": "Choose Filter"}
 
 class PackageConfigsOuter(Configs):
     executor: ConfigExecutor
-
 
 class PackageModel(Package):
     configs: PackageConfigsOuter
