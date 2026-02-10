@@ -2,15 +2,13 @@ from pydantic import Field, validator
 from typing import List, Optional, Union, Literal
 from sdks.novavision.src.base.model import Package, Image, Inputs, Configs, Outputs, Response, Request, Output, Input, Config
 
-# INPUTLAR 
 class InputImage(Input):
     name: Literal["inputImage"] = "inputImage"
     value: Union[List[Image], Image]
     type: str = "object"
     @validator("type", pre=True, always=True)
     def set_type(cls, value, values):
-        val = values.get('value')
-        return "list" if isinstance(val, list) else "object"
+        return "list" if isinstance(values.get('value'), list) else "object"
     class Config: title = "Main Image"
 
 class InputImage2(Input):
@@ -19,19 +17,16 @@ class InputImage2(Input):
     type: str = "object"
     @validator("type", pre=True, always=True)
     def set_type(cls, value, values):
-        val = values.get('value')
-        return "list" if isinstance(val, list) else "object"
-    class Config: title = "Second Image (For Blender)"
+        return "list" if isinstance(values.get('value'), list) else "object"
+    class Config: title = "Second Image"
 
-# OUTPUTLAR (iki Cikis) 
 class OutputImage(Output):
     name: Literal["outputImage"] = "outputImage"
     value: Union[List[Image], Image]
     type: str = "object"
     @validator("type", pre=True, always=True)
     def set_type(cls, value, values):
-        val = values.get('value')
-        return "list" if isinstance(val, list) else "object"
+        return "list" if isinstance(values.get('value'), list) else "object"
     class Config: title = "Result Image"
 
 class OutputMessage(Output):
@@ -40,85 +35,137 @@ class OutputMessage(Output):
     type: Literal["string"] = "string"
     class Config: title = "Status Message"
 
-# AYARLAR
-
-# 1. Grayscale 
-class ThreshVal(Config):
+class ManualThreshVal(Config):
     name: Literal["thresh_val"] = "thresh_val"
     value: int = Field(default=127, ge=0, le=255)
     type: Literal["number"] = "number"
     field: Literal["textInput"] = "textInput"
-    class Config: title = "Threshold (Int)"
+    class Config: title = "Threshold Value"
 
-class GrayOption(Config):
-    name: Literal["gray_mode"] = "gray_mode"
-    value: ThreshVal
+class GrayOptionManual(Config):
+    name: Literal["manual_mode"] = "manual_mode"
+    value: ManualThreshVal  
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
-    class Config: title = "Grayscale Mode"
+    class Config: title = "Manual Threshold"
 
-# 2. Blender 
+class AutoBoolVal(Config):
+    name: Literal["use_auto"] = "use_auto"
+    value: bool = Field(default=True)
+    type: Literal["bool"] = "bool"
+    field: Literal["checkbox"] = "checkbox"   
+    class Config: title = "Use Auto Threshold"
+
+class GrayOptionAuto(Config):
+    name: Literal["auto_mode"] = "auto_mode"
+    value: AutoBoolVal  
+    type: Literal["object"] = "object"
+    field: Literal["option"] = "option"
+    class Config: title = "Auto Threshold"
+
+class GrayscaleSelector(Config):
+    name: Literal["gray_selector"] = "gray_selector"
+    value: Union[GrayOptionManual, GrayOptionAuto]
+    type: Literal["object"] = "object"
+    field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
+    class Config: title = "Grayscale Method"
+
+class GrayscaleConfigs(Configs):
+    setting: GrayscaleSelector
+
+class GrayscaleInputs(Inputs):
+    inputImage: InputImage 
+
+class GrayscaleOutputs(Outputs):
+    outputImage: OutputImage 
+
+class GrayscaleRequest(Request):
+    inputs: Optional[GrayscaleInputs]
+    configs: GrayscaleConfigs
+    class Config: json_schema_extra = {"target": "configs"}
+
+class GrayscaleResponse(Response):
+    outputs: GrayscaleOutputs
+
+class GrayscaleExecutor(Config):
+    name: Literal["GrayscaleTask"] = "GrayscaleTask"
+    value: Union[GrayscaleRequest, GrayscaleResponse]
+    type: Literal["object"] = "object"
+    field: Literal["option"] = "option"
+    class Config:
+        title = "Grayscale Filter"
+        json_schema_extra = {"target": {"value": 0}}
+
 class OpacityVal(Config):
     name: Literal["opacity_val"] = "opacity_val"
     value: float = Field(default=0.5, ge=0.0, le=1.0)
     type: Literal["number"] = "number"
     field: Literal["textInput"] = "textInput"
-    class Config: title = "Opacity (Float)"
+    class Config: title = "Opacity (0.0 - 1.0)"
 
-class BlendOption(Config):
-    name: Literal["blend_mode"] = "blend_mode"
-    value: OpacityVal
+class BlendOptionOpacity(Config):
+    name: Literal["opacity_mode"] = "opacity_mode"
+    value: OpacityVal # FLOAT Tipi
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
-    class Config: title = "Blender Mode"
+    class Config: title = "Weighted Blend"
 
-# Ana Secim
-class OperationSelector(Config):
-    name: Literal["operation_mode"] = "operation_mode"
-    value: Union[GrayOption, BlendOption]
+class TextVal(Config):
+    name: Literal["watermark_text"] = "watermark_text"
+    value: str = Field(default="Demo")
+    type: Literal["string"] = "string"
+    field: Literal["textInput"] = "textInput"
+    class Config: title = "Watermark Text"
+
+class BlendOptionText(Config):
+    name: Literal["text_mode"] = "text_mode"
+    value: TextVal   
+    type: Literal["object"] = "object"
+    field: Literal["option"] = "option"
+    class Config: title = "Text Overlay"
+
+class BlenderSelector(Config):
+    name: Literal["blend_selector"] = "blend_selector"
+    value: Union[BlendOptionOpacity, BlendOptionText]
     type: Literal["object"] = "object"
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
-    class Config: title = "Select Operation"
+    class Config: title = "Blender Method"
 
-# YAPISTIRICI KISIM 
-class PackageInputs(Inputs):
+class BlenderConfigs(Configs):
+    setting: BlenderSelector
+
+class BlenderInputs(Inputs):
     inputImage: InputImage
-    inputImage2: Optional[InputImage2]
+    inputImage2: InputImage2 
 
-class PackageConfigsInner(Configs):
-    operation_mode: OperationSelector
-
-# Cikislar Listesi (iki Tane)
-class PackageOutputs(Outputs):
+class BlenderOutputs(Outputs):
     outputImage: OutputImage
-    outputMessage: OutputMessage
+    outputMessage: OutputMessage 
 
-class PackageRequest(Request):
-    inputs: Optional[PackageInputs]
-    configs: PackageConfigsInner
-    class Config:
-        json_schema_extra = {"target": "configs"}
+class BlenderRequest(Request):
+    inputs: Optional[BlenderInputs]
+    configs: BlenderConfigs
+    class Config: json_schema_extra = {"target": "configs"}
 
-class PackageResponse(Response):
-    outputs: PackageOutputs
+class BlenderResponse(Response):
+    outputs: BlenderOutputs
 
-class PackageExecutor(Config):
-    name: Literal["Package"] = "Package"
-    value: Union[PackageRequest, PackageResponse]
+class BlenderExecutor(Config):
+    name: Literal["BlenderTask"] = "BlenderTask"
+    value: Union[BlenderRequest, BlenderResponse]
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
     class Config:
-        title = "Package"
-        json_schema_extra = {"target": {"value": 0}}
+        title = "Image Blender"
+        json_schema_extra = {"target": {"value": 1}}
 
 class ConfigExecutor(Config):
     name: Literal["ConfigExecutor"] = "ConfigExecutor"
-    value: Union[PackageExecutor]
+    value: Union[GrayscaleExecutor, BlenderExecutor]
     type: Literal["executor"] = "executor"
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
     class Config:
-        title = "Task"
-        json_schema_extra = {"target": "value"}
+        title = "Select Task"
 
 class PackageConfigsOuter(Configs):
     executor: ConfigExecutor
