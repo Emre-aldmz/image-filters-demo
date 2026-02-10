@@ -126,4 +126,4 @@ class PackageConfigsOuter(Configs):
 class PackageModel(Package):
     configs: PackageConfigsOuter
     type: Literal["component"] = "component"
-    name: Literal["DemoImageFilters"] = "DemoImageFilters"
+    name: Literal["ImageFilters"] = "ImageFilters"
