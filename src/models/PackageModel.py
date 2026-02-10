@@ -174,3 +174,4 @@ class PackageModel(Package):
     configs: PackageConfigsOuter
     type: Literal["component"] = "component"
     name: Literal["ImageFilters"] = "ImageFilters"
+    image: Literal[""] = ""
