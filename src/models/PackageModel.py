@@ -70,7 +70,6 @@ class GrayscaleSelector(Config):
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
     class Config: 
         title = "Grayscale Method"
-        json_schema_extra = {"target": "value"}
 
 class GrayscaleConfigs(Configs):
     setting: GrayscaleSelector
@@ -96,7 +95,6 @@ class GrayscaleExecutor(Config):
     field: Literal["option"] = "option"
     class Config:
         title = "Grayscale Filter"
-        json_schema_extra = {"target": {"value": 0}}
 
 class OpacityVal(Config):
     name: Literal["opacity_val"] = "opacity_val"
@@ -133,7 +131,6 @@ class BlenderSelector(Config):
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
     class Config: 
         title = "Blender Method"
-        json_schema_extra = {"target": "value"}
 
 class BlenderConfigs(Configs):
     setting: BlenderSelector
@@ -161,7 +158,6 @@ class BlenderExecutor(Config):
     field: Literal["option"] = "option"
     class Config:
         title = "Image Blender"
-        json_schema_extra = {"target": {"value": 1}}
 
 class ConfigExecutor(Config):
     name: Literal["ConfigExecutor"] = "ConfigExecutor"
@@ -173,7 +169,6 @@ class ConfigExecutor(Config):
 
     class Config:
         title = "Select Task"
-        json_schema_extra = {"target": "value"}
 
 class PackageConfigsOuter(Configs):
     executor: ConfigExecutor
