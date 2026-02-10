@@ -24,7 +24,9 @@ class BlenderTask(Component):
     def __init__(self, request, bootstrap):
         super().__init__(request, bootstrap)
         self.request.model = PackageModel(**(self.request.data))
-        self.config_data = self.request.model.configs.executor.value
+        
+        self.req_data = self.request.model.configs.executor.value.value
+        
         self.outputImage = None
         self.outputMessage = None
 
@@ -33,7 +35,7 @@ class BlenderTask(Component):
         return {}
 
     def run(self):
-        req_inputs = self.config_data.inputs
+        req_inputs = self.req_data.inputs
         if not req_inputs: return build_response(context=self)
 
         in1 = req_inputs.inputImage
@@ -44,10 +46,12 @@ class BlenderTask(Component):
         main_img = img_obj1.value.copy()
 
         in2 = req_inputs.inputImage2
-        ref2 = in2[0] if isinstance(in2, list) else in2
-        img_obj2 = Image.get_frame(img=ref2, redis_db=self.redis_db)
+        img_obj2 = None
+        if in2:
+            ref2 = in2[0] if isinstance(in2, list) else in2
+            img_obj2 = Image.get_frame(img=ref2, redis_db=self.redis_db)
 
-        setting_wrapper = self.config_data.configs.setting.value
+        setting_wrapper = self.req_data.configs.setting.value
         mode_name = setting_wrapper.name
         
         msg = "Ready"
