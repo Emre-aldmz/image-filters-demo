@@ -24,7 +24,9 @@ class GrayscaleTask(Component):
     def __init__(self, request, bootstrap):
         super().__init__(request, bootstrap)
         self.request.model = PackageModel(**(self.request.data))
-        self.config_data = self.request.model.configs.executor.value
+        
+        self.req_data = self.request.model.configs.executor.value.value
+        
         self.outputImage = None
 
     @staticmethod
@@ -32,7 +34,7 @@ class GrayscaleTask(Component):
         return {}
 
     def run(self):
-        req_inputs = self.config_data.inputs
+        req_inputs = self.req_data.inputs
         if not req_inputs or not req_inputs.inputImage:
             return build_response(context=self)
 
@@ -43,7 +45,7 @@ class GrayscaleTask(Component):
         if img_obj is None or img_obj.value is None:
             return build_response(context=self)
 
-        setting_wrapper = self.config_data.configs.setting.value
+        setting_wrapper = self.req_data.configs.setting.value
         mode_name = setting_wrapper.name
         
         img = img_obj.value.copy()
