@@ -44,7 +44,7 @@ class ManualThreshVal(Config):
 
 class GrayOptionManual(Config):
     name: Literal["manual_mode"] = "manual_mode"
-    value: ManualThreshVal  
+    value: ManualThreshVal
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
     class Config: title = "Manual Threshold"
@@ -53,12 +53,12 @@ class AutoBoolVal(Config):
     name: Literal["use_auto"] = "use_auto"
     value: bool = Field(default=True)
     type: Literal["bool"] = "bool"
-    field: Literal["checkbox"] = "checkbox"   
+    field: Literal["checkbox"] = "checkbox"
     class Config: title = "Use Auto Threshold"
 
 class GrayOptionAuto(Config):
     name: Literal["auto_mode"] = "auto_mode"
-    value: AutoBoolVal  
+    value: AutoBoolVal
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
     class Config: title = "Auto Threshold"
@@ -74,10 +74,10 @@ class GrayscaleConfigs(Configs):
     setting: GrayscaleSelector
 
 class GrayscaleInputs(Inputs):
-    inputImage: InputImage 
+    inputImage: InputImage
 
 class GrayscaleOutputs(Outputs):
-    outputImage: OutputImage 
+    outputImage: OutputImage
 
 class GrayscaleRequest(Request):
     inputs: Optional[GrayscaleInputs]
@@ -105,7 +105,7 @@ class OpacityVal(Config):
 
 class BlendOptionOpacity(Config):
     name: Literal["opacity_mode"] = "opacity_mode"
-    value: OpacityVal # FLOAT Tipi
+    value: OpacityVal
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
     class Config: title = "Weighted Blend"
@@ -119,7 +119,7 @@ class TextVal(Config):
 
 class BlendOptionText(Config):
     name: Literal["text_mode"] = "text_mode"
-    value: TextVal   
+    value: TextVal
     type: Literal["object"] = "object"
     field: Literal["option"] = "option"
     class Config: title = "Text Overlay"
@@ -136,11 +136,11 @@ class BlenderConfigs(Configs):
 
 class BlenderInputs(Inputs):
     inputImage: InputImage
-    inputImage2: InputImage2 
+    inputImage2: InputImage2
 
 class BlenderOutputs(Outputs):
     outputImage: OutputImage
-    outputMessage: OutputMessage 
+    outputMessage: OutputMessage
 
 class BlenderRequest(Request):
     inputs: Optional[BlenderInputs]
@@ -161,14 +161,22 @@ class BlenderExecutor(Config):
 
 class ConfigExecutor(Config):
     name: Literal["ConfigExecutor"] = "ConfigExecutor"
+    
     value: Union[GrayscaleExecutor, BlenderExecutor]
+    
     type: Literal["executor"] = "executor"
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
+    
+    restart: Literal[True] = True 
+    
     class Config:
         title = "Select Task"
+        json_schema_extra = {"target": "value"}
+
 
 class PackageConfigsOuter(Configs):
     executor: ConfigExecutor
+
 
 class PackageModel(Package):
     configs: PackageConfigsOuter
