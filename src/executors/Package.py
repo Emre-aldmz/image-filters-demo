@@ -3,102 +3,134 @@ import cv2
 import sys
 import numpy as np
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../../../')) #
+current_dir = os.path.dirname(os.path.abspath(__file__))
+src_dir = os.path.dirname(current_dir)
+if src_dir not in sys.path:
+    sys.path.append(src_dir)
+
+try:
+    from models.PackageModel import PackageModel
+    from utils.response import build_response
+except ImportError:
+    sys.path.append(os.path.join(os.path.dirname(__file__), '../../../../'))
+    from components.ImageFilters.src.models.PackageModel import PackageModel
+    from components.ImageFilters.src.utils.response import build_response
 
 from sdks.novavision.src.media.image import Image
 from sdks.novavision.src.base.component import Component
 from sdks.novavision.src.helper.executor import Executor
-from components.ImageFilters.src.utils.response import build_response
-from components.ImageFilters.src.models.PackageModel import PackageModel
 
 class Package(Component):
     def __init__(self, request, bootstrap):
         super().__init__(request, bootstrap)
         self.request.model = PackageModel(**(self.request.data))
-         # input unutma
-        self.task_settings = self.request.get_param("operation_mode")
-        self.image_main = self.request.get_param("inputImage")
-        self.image_sec = self.request.get_param("inputImage2")
-        
+        self.executor_config = self.request.model.configs.executor
+        self.active_request = self.executor_config.value.value
         self.outputImage = None
-        self.outputMessage = "Baslangic"
+        self.outputMessage = None   
 
     @staticmethod
     def bootstrap(config: dict) -> dict:
         return {}
 
-    def process_image(self, img_main_data, img_sec_data=None):
-        result = img_main_data.copy()
-        settings_str = str(self.task_settings)
-        msg = "Islem Yapildi"
-
-        #  EXECUTOR 1: GRAYSCALE 
-        if "gray_mode" in settings_str:
-            gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-            thresh = 127
-            try:
-                if hasattr(self.task_settings, 'value') and hasattr(self.task_settings.value, 'value'):
-                    thresh = int(self.task_settings.value.value)
-            except:
-                pass
+    def run_grayscale(self):
+        print("DEBUG: Grayscale Gorevi Baslatiliyor...")
+        
+        if not self.active_request.inputs or not self.active_request.inputs.inputImage:
+            print("HATA: Giris resmi yok!")
+            return
             
-            _, result = cv2.threshold(gray, thresh, 255, cv2.THRESH_BINARY)
+        img_input = self.active_request.inputs.inputImage
+        img_ref = img_input[0] if isinstance(img_input, list) else img_input
+        
+        img_obj = Image.get_frame(img=img_ref, redis_db=self.redis_db)
+        if img_obj is None or img_obj.value is None: return
+
+        setting_obj = self.active_request.configs.setting.value  
+        setting_name = setting_obj.name 
+        
+        result = img_obj.value.copy()
+        gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+        
+        thresh_val = 127
+        mode_text = "AUTO"
+        
+        if setting_name == "manual_mode":
+            thresh_val = int(setting_obj.value.value)
+            mode_text = f"MANUAL: {thresh_val}"
+            _, result = cv2.threshold(gray, thresh_val, 255, cv2.THRESH_BINARY)
+            
+        elif setting_name == "auto_mode":
+            use_auto = bool(setting_obj.value.value)
+            mode_text = f"AUTO: {use_auto}"
+            if use_auto:
+                thresh_val, result = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            else:
+                result = gray
+
+        if len(result.shape) == 2:
             result = cv2.cvtColor(result, cv2.COLOR_GRAY2BGR)
             
-            cv2.putText(result, f"GRAY: {thresh}", (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 3)
-            msg = f"Grayscale uygulandi. Esik degeri: {thresh}"
-
-        # EXECUTOR 2: BLENDER 
-        elif "blend_mode" in settings_str:
-            if img_sec_data is not None:
-                h, w, _ = result.shape
-                img_sec_resized = cv2.resize(img_sec_data, (w, h))
-                
-                alpha = 0.5
-                try:
-                    if hasattr(self.task_settings, 'value') and hasattr(self.task_settings.value, 'value'):
-                        alpha = float(self.task_settings.value.value)
-                except:
-                    pass
-                
-                beta = 1.0 - alpha
-                result = cv2.addWeighted(result, alpha, img_sec_resized, beta, 0.0)
-                cv2.putText(result, f"BLEND: {alpha}", (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 3)
-                msg = f"Birlestirme yapildi. Opaklik: {alpha}"
-            else:
-                cv2.putText(result, "2. RESIM YOK!", (50, 200), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 5)
-                msg = "HATA: Ikinci resim eksik!"
+        cv2.putText(result, f"TASK 1: {mode_text}", (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         
-        return result, msg
+        img_obj.value = result
+        self.outputImage = Image.set_frame(img=img_obj, package_uID=self.uID, redis_db=self.redis_db)
+
+    def run_blender(self):
+        print("DEBUG: Blender Gorevi Baslatiliyor...")
+        
+        if not self.active_request.inputs: return
+        
+        in1 = self.active_request.inputs.inputImage
+        ref1 = in1[0] if isinstance(in1, list) else in1
+        img_obj1 = Image.get_frame(img=ref1, redis_db=self.redis_db)
+        
+        in2 = self.active_request.inputs.inputImage2
+        ref2 = in2[0] if isinstance(in2, list) else in2
+        img_obj2 = Image.get_frame(img=ref2, redis_db=self.redis_db)
+        
+        if img_obj1 is None: return
+        
+        main_img = img_obj1.value.copy()
+        
+        setting_obj = self.active_request.configs.setting.value
+        setting_name = setting_obj.name 
+        
+        msg = "Islem Basarili"
+        
+        if setting_name == "opacity_mode":
+            opacity = float(setting_obj.value.value)
+            msg = f"Blend Modu. Opaklik: {opacity}"
+            
+            if img_obj2 is not None and img_obj2.value is not None:
+                sec_img = img_obj2.value
+                h, w, _ = main_img.shape
+                sec_resized = cv2.resize(sec_img, (w, h))
+                main_img = cv2.addWeighted(main_img, opacity, sec_resized, 1.0 - opacity, 0.0)
+            else:
+                msg = "HATA: 2. Resim Yok!"
+                cv2.putText(main_img, "NO 2ND IMAGE", (50, 200), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 5)
+
+        elif setting_name == "text_mode":
+            text_to_write = str(setting_obj.value.value)
+            msg = f"Yazi Modu: {text_to_write}"
+            cv2.putText(main_img, text_to_write, (50, 250), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 5)
+            
+        cv2.putText(main_img, "TASK 2: BLENDER", (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+
+        img_obj1.value = main_img
+        self.outputImage = Image.set_frame(img=img_obj1, package_uID=self.uID, redis_db=self.redis_db)
+        self.outputMessage = str(msg)
 
     def run(self):
-        # 1. birtinci Resim
-        img_obj_main = Image.get_frame(img=self.image_main, redis_db=self.redis_db)
+        print(f"DEBUG: Secilen Gorev -> {self.task_name}")
         
-        if img_obj_main is None or img_obj_main.value is None:
-            return build_response(context=self)
-
-        main_data = img_obj_main.value
-        
-        # 2. ikinci Resim
-        sec_data = None
-        if self.image_sec:
-            try:
-                sec_input = self.image_sec[0] if isinstance(self.image_sec, list) else self.image_sec
-                img_obj_sec = Image.get_frame(img=sec_input, redis_db=self.redis_db)
-                sec_data = img_obj_sec.value
-            except:
-                pass
-
-        # 3. isle
-        processed_data, message_data = self.process_image(main_data, sec_data)
-            
-        # 4. kaydet 
-        img_obj_main.value = processed_data
-        self.outputImage = Image.set_frame(img=img_obj_main, package_uID=self.uID, redis_db=self.redis_db)
-        
-        # 5. Kaydet 
-        self.outputMessage = str(message_data)
+        if self.task_name == "GrayscaleTask":
+            self.run_grayscale()
+        elif self.task_name == "BlenderTask":
+            self.run_blender()
+        else:
+            print(f"Bilinmeyen Gorev: {self.task_name}")
         
         return build_response(context=self)
 
