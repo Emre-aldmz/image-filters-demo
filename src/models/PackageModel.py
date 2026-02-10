@@ -68,7 +68,9 @@ class GrayscaleSelector(Config):
     value: Union[GrayOptionManual, GrayOptionAuto]
     type: Literal["object"] = "object"
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
-    class Config: title = "Grayscale Method"
+    class Config: 
+        title = "Grayscale Method"
+        json_schema_extra = {"target": "value"}
 
 class GrayscaleConfigs(Configs):
     setting: GrayscaleSelector
@@ -129,7 +131,9 @@ class BlenderSelector(Config):
     value: Union[BlendOptionOpacity, BlendOptionText]
     type: Literal["object"] = "object"
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
-    class Config: title = "Blender Method"
+    class Config: 
+        title = "Blender Method"
+        json_schema_extra = {"target": "value"}
 
 class BlenderConfigs(Configs):
     setting: BlenderSelector
@@ -161,22 +165,16 @@ class BlenderExecutor(Config):
 
 class ConfigExecutor(Config):
     name: Literal["ConfigExecutor"] = "ConfigExecutor"
-    
     value: Union[GrayscaleExecutor, BlenderExecutor]
-    
     type: Literal["executor"] = "executor"
     field: Literal["dependentDropdownlist"] = "dependentDropdownlist"
-    
     restart: Literal[True] = True 
-    
     class Config:
         title = "Select Task"
         json_schema_extra = {"target": "value"}
 
-
 class PackageConfigsOuter(Configs):
     executor: ConfigExecutor
-
 
 class PackageModel(Package):
     configs: PackageConfigsOuter
