@@ -1,14 +1,41 @@
 
 from sdks.novavision.src.helper.package import PackageHelper
-from components.Package.src.models.PackageModel import PackageModel, PackageConfigs, ConfigExecutor, PackageOutputs, PackageResponse, PackageExecutor, OutputImage
+from components.ImageFilters.src.models.PackageModel import (
+    PackageModel,
+    PackageConfigs,
+    ConfigExecutor,
+    # Grayscale kısalt
+    GrayscaleExecutor,
+    GrayscaleOutputs,
+    GrayscaleResponse,
+    OutputImage,
+    # Blender kısalt
+    BlenderExecutor,
+    BlenderOutputs,
+    BlenderResponse,
+    OutputMessage,
+)
 
 
-def build_response(context):
+def build_grayscale_response(context):
     outputImage = OutputImage(value=context.image)
-    Outputs = PackageOutputs(outputImage=outputImage)
-    packageResponse = PackageResponse(outputs=Outputs)
-    packageExecutor = PackageExecutor(value=packageResponse)
-    executor = ConfigExecutor(value=packageExecutor)
+    outputs = GrayscaleOutputs(outputImage=outputImage)
+    response = GrayscaleResponse(outputs=outputs)
+    grayscaleExecutor = GrayscaleExecutor(value=response)
+    executor = ConfigExecutor(value=grayscaleExecutor)
+    packageConfigs = PackageConfigs(executor=executor) # (Düzenlenecek unurma!)
+    package = PackageHelper(packageModel=PackageModel, packageConfigs=packageConfigs)
+    packageModel = package.build_model(context)
+    return packageModel
+
+
+def build_blender_response(context):
+    outputImage = OutputImage(value=context.image)
+    outputMessage = OutputMessage(value=context.message)
+    outputs = BlenderOutputs(outputImage=outputImage, outputMessage=outputMessage)
+    response = BlenderResponse(outputs=outputs)
+    blenderExecutor = BlenderExecutor(value=response)
+    executor = ConfigExecutor(value=blenderExecutor)
     packageConfigs = PackageConfigs(executor=executor)
     package = PackageHelper(packageModel=PackageModel, packageConfigs=packageConfigs)
     packageModel = package.build_model(context)
