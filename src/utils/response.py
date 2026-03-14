@@ -4,12 +4,12 @@ from components.ImageFilters.src.models.PackageModel import (
     PackageModel,
     PackageConfigs,
     ConfigExecutor,
-    # Grayscale kısalt
+    # Grayscale
     GrayscaleExecutor,
     GrayscaleOutputs,
     GrayscaleResponse,
     OutputImage,
-    # Blender kısalt
+    # Blender
     BlenderExecutor,
     BlenderOutputs,
     BlenderResponse,
@@ -23,7 +23,7 @@ def build_grayscale_response(context):
     response = GrayscaleResponse(outputs=outputs)
     grayscaleExecutor = GrayscaleExecutor(value=response)
     executor = ConfigExecutor(value=grayscaleExecutor)
-    packageConfigs = PackageConfigs(executor=executor) # (Düzenlenecek unurma!)
+    packageConfigs = PackageConfigs(executor=executor)
     package = PackageHelper(packageModel=PackageModel, packageConfigs=packageConfigs)
     packageModel = package.build_model(context)
     return packageModel
