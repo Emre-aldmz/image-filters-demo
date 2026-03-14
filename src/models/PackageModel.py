@@ -2,7 +2,10 @@ from pydantic import validator
 from typing import List, Union, Literal, Optional
 from sdks.novavision.src.base.model import Package, Image, Inputs, Configs, Outputs, Response, Request, Output, Input, Config
 
+
+# ──────────────────────────────────────────────
 #  SHARED OUTPUT / INPUT TYPES
+# ──────────────────────────────────────────────
 
 class InputImage(Input):
     name: Literal["inputImage"] = "inputImage"
@@ -63,7 +66,10 @@ class OutputMessage(Output):
     class Config:
         title = "Message"
 
+
+# ══════════════════════════════════════════════
 #  GRAYSCALE EXECUTOR CHAIN
+# ══════════════════════════════════════════════
 
 # --- manual_mode ---
 
@@ -91,6 +97,7 @@ class ManualMode(Config):
     class Config:
         title = "Manual Mode"
 
+
 # --- auto_mode ---
 
 class AutoModeCheck(Config):
@@ -116,6 +123,7 @@ class AutoMode(Config):
 
     class Config:
         title = "Auto Mode"
+
 
 # --- Grayscale selector & request ---
 
@@ -173,7 +181,10 @@ class GrayscaleExecutor(Config):
             }
         }
 
+
+# ══════════════════════════════════════════════
 #  BLENDER EXECUTOR CHAIN
+# ══════════════════════════════════════════════
 
 # --- opacity_mode ---
 
@@ -201,6 +212,7 @@ class OpacityMode(Config):
     class Config:
         title = "Opacity Mode"
 
+
 # --- text_mode ---
 
 class TextModeVal(Config):
@@ -226,6 +238,7 @@ class TextMode(Config):
 
     class Config:
         title = "Text Mode"
+
 
 # --- Blender selector & request ---
 
@@ -285,7 +298,10 @@ class BlenderExecutor(Config):
             }
         }
 
+
+# ══════════════════════════════════════════════
 #  CONFIG EXECUTOR (DISPATCHER) & PACKAGE MODEL
+# ══════════════════════════════════════════════
 
 class ConfigExecutor(Config):
     name: Literal["ConfigExecutor"] = "ConfigExecutor"
